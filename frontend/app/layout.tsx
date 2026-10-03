@@ -2,7 +2,7 @@ import React from "react";
 import "./globals.css";
 
 export const metadata = {
-  title: "SAM7 AI • Academic Document Assistant",
+  title: "KIWI AI • Academic Document Assistant",
   description: "ChatGPT-style document and subtopic assistant for Semester 7 course materials",
 };
 

@@ -27,30 +27,63 @@ def _prompt(question: str, chunks: list[dict], history: list[dict] | None = None
     return f"{SYSTEM_PROMPT}\n\nDOCUMENT CONTEXT:\n{context}{history_text}\n\nQUESTION:\n{question}"
 
 
-def _post_json(url: str, payload: dict, headers: dict[str, str]) -> dict:
+import time
+
+
+def _post_json(url: str, payload: dict, headers: dict[str, str], max_retries: int = 2) -> dict:
     body = json.dumps(payload).encode("utf-8")
     call = request.Request(url, data=body, headers={**headers, "Content-Type": "application/json"})
-    try:
-        with request.urlopen(call, timeout=60) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"LLM provider returned HTTP {exc.code}: {detail}") from exc
-    except error.URLError as exc:
-        raise RuntimeError(f"Could not reach LLM provider: {exc.reason}") from exc
+    
+    last_exc = None
+    for attempt in range(max_retries + 1):
+        try:
+            with request.urlopen(call, timeout=60) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except error.HTTPError as exc:
+            last_exc = exc
+            detail = exc.read().decode("utf-8", errors="replace")
+            # If 503 (Overloaded / Unavailable) or 429 (Rate Limit / Quota Spikes), wait and retry
+            if exc.code in (503, 429) and attempt < max_retries:
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            raise RuntimeError(f"LLM provider returned HTTP {exc.code}: {detail}") from exc
+        except error.URLError as exc:
+            last_exc = exc
+            if attempt < max_retries:
+                time.sleep(1.0)
+                continue
+            raise RuntimeError(f"Could not reach LLM provider: {exc.reason}") from exc
+            
+    raise RuntimeError(f"LLM provider request failed after retries: {last_exc}")
 
 
 def _gemini_answer(prompt: str) -> str:
     key = os.getenv("GEMINI_API_KEY")
     if not key:
         raise RuntimeError("GEMINI_API_KEY is required when LLM_PROVIDER=gemini")
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
-    result = _post_json(url, {"contents": [{"parts": [{"text": prompt}]}]}, {})
-    try:
-        return result["candidates"][0]["content"]["parts"][0]["text"]
-    except (KeyError, IndexError, TypeError) as exc:
-        raise RuntimeError("Gemini returned no usable answer") from exc
+    
+    primary_model = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+    # Candidate models to try in case the primary is overloaded or quota-limited
+    models_to_try = [primary_model]
+    for fallback in ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash", "gemma-4-26b-a4b-it"]:
+        if fallback not in models_to_try:
+            models_to_try.append(fallback)
+            
+    last_error = None
+    for model in models_to_try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+        try:
+            result = _post_json(url, {"contents": [{"parts": [{"text": prompt}]}]}, {})
+            return result["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception as exc:
+            last_error = exc
+            err_str = str(exc)
+            # If 503 (overloaded) or 429 (quota/rate limit), try the next fallback model
+            if "503" in err_str or "429" in err_str:
+                continue
+            raise exc
+
+    raise last_error or RuntimeError("Gemini returned no usable answer")
 
 
 def _openai_answer(prompt: str) -> str:
