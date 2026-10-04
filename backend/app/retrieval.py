@@ -303,3 +303,5 @@ class Retriever:
             doc["relevance"] = round(min(1.0, doc["final_score"] / max_s), 4)
 
         return ranked_docs[:top_k]
+
+

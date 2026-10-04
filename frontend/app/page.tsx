@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API = "https://kiwi-9w1p.onrender.com" // "http://localhost:8000";
 
 type Source = {
   document_id: string;
