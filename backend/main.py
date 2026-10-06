@@ -34,6 +34,7 @@ class Query(BaseModel):
     query: str
     top_k: int | None = None
     history: list[Message] | None = None
+    debug: bool = False
 
 
 def _manifest() -> dict[str, dict]:
@@ -115,7 +116,10 @@ def ask(request: Query):
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
-    return {"answer": answer, "sources": sources, "query": request.query}
+    response: dict = {"answer": answer, "sources": sources, "query": request.query}
+    if request.debug:
+        response["retrieval_debug"] = retriever.retrieve_debug(request.query, request.top_k or settings.top_k)
+    return response
 
 
 @app.post("/find")
@@ -138,6 +142,14 @@ def find(request: Query):
                 "folder_path": document.get("folder_path"),
             })
     return {"documents": results, "total": len(results), "query": request.query}
+
+
+@app.post("/debug")
+def debug_retrieval(request: Query):
+    """Full retrieval debug: shows every strategy, score, and match reason."""
+    top_k = request.top_k or settings.top_k
+    result = retriever.retrieve_debug(request.query, top_k)
+    return result
 
 
 @app.get("/documents")
