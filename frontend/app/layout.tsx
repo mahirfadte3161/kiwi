@@ -1,4 +1,5 @@
 import React from "react";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata = {
@@ -13,7 +14,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥝</text></svg>" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <div id="JFWebsiteWidget-01a117e92dc070008cbeaca5d19255c5ce14"></div>
+        <Script
+          src="https://www.jotform.com/website-widgets/embed/01a117e92dc070008cbeaca5d19255c5ce14"
+          strategy="afterInteractive"
+        />
+      </body>
     </html>
   );
 }
