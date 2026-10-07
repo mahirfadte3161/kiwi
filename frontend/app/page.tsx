@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { ThemeToggle } from "./components/ThemeToggle";
 
-const API = "https://kiwi-9w1p.onrender.com" // "http://localhost:8000";
+const API = "http://localhost:8000";
 
 type Source = {
   document_id: string;
@@ -32,7 +33,7 @@ type ChatSession = {
   messages: Message[];
 };
 
-// Clean ChatGPT-style Markdown & Code Renderer
+// Vercel-Style Clean Markdown & Code Renderer
 function MarkdownRenderer({ content }: { content: string }) {
   if (!content) return null;
 
@@ -56,9 +57,9 @@ function MarkdownRenderer({ content }: { content: string }) {
     if (!currentList) return;
     if (currentList.type === "ul") {
       elements.push(
-        <ul key={`ul-${elements.length}`} style={{ paddingLeft: "1.4rem", margin: "0.6rem 0" }}>
+        <ul key={`ul-${elements.length}`} style={{ paddingLeft: "1.2rem", margin: "0.5rem 0" }}>
           {currentList.items.map((item, i) => (
-            <li key={i} style={{ marginBottom: "0.35rem" }}>
+            <li key={i} style={{ marginBottom: "0.3rem" }}>
               {renderInline(item)}
             </li>
           ))}
@@ -66,9 +67,9 @@ function MarkdownRenderer({ content }: { content: string }) {
       );
     } else {
       elements.push(
-        <ol key={`ol-${elements.length}`} style={{ paddingLeft: "1.4rem", margin: "0.6rem 0" }}>
+        <ol key={`ol-${elements.length}`} style={{ paddingLeft: "1.2rem", margin: "0.5rem 0" }}>
           {currentList.items.map((item, i) => (
-            <li key={i} style={{ marginBottom: "0.35rem" }}>
+            <li key={i} style={{ marginBottom: "0.3rem" }}>
               {renderInline(item)}
             </li>
           ))}
@@ -89,10 +90,10 @@ function MarkdownRenderer({ content }: { content: string }) {
         key={`code-wrap-${elements.length}`}
         style={{
           margin: "1rem 0",
-          borderRadius: "10px",
+          borderRadius: "8px",
           overflow: "hidden",
-          border: "1px solid rgba(255,255,255,0.1)",
-          background: "#090a0f",
+          boxShadow: "var(--shadow)",
+          background: "var(--bg-surface)",
         }}
       >
         <div
@@ -100,11 +101,12 @@ function MarkdownRenderer({ content }: { content: string }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "6px 14px",
-            background: "rgba(255,255,255,0.04)",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
-            fontSize: "0.78rem",
-            color: "#9ca3af",
+            padding: "6px 12px",
+            background: "var(--bg-recessed)",
+            borderBottom: "1px solid var(--border-color)",
+            fontSize: "0.75rem",
+            color: "var(--fg-secondary)",
+            fontFamily: "monospace",
           }}
         >
           <span>{codeBlockLang || "code"}</span>
@@ -112,17 +114,17 @@ function MarkdownRenderer({ content }: { content: string }) {
             onClick={() => copyToClipboard(codeString, currentIndex)}
             style={{
               fontSize: "0.75rem",
-              color: isCopied ? "#10a37f" : "#9ca3af",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
+              color: isCopied ? "#34D399" : "var(--fg-secondary)",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
             }}
           >
-            {isCopied ? "✓ Copied" : "Copy"}
+            {isCopied ? "Copied" : "Copy"}
           </button>
         </div>
-        <pre style={{ margin: 0, padding: "0.9rem 1.1rem", overflowX: "auto" }}>
-          <code>{codeString}</code>
+        <pre style={{ margin: 0, padding: "0.85rem 1rem", overflowX: "auto" }}>
+          <code style={{ color: "var(--fg-primary)", fontSize: "0.85rem" }}>{codeString}</code>
         </pre>
       </div>
     );
@@ -143,12 +145,12 @@ function MarkdownRenderer({ content }: { content: string }) {
       }
       const raw = match[0];
       if (raw.startsWith("**") && raw.endsWith("**")) {
-        parts.push(<strong key={match.index} style={{ color: "#ffffff", fontWeight: 600 }}>{raw.slice(2, -2)}</strong>);
+        parts.push(<strong key={match.index} style={{ color: "var(--fg-primary)", fontWeight: 600 }}>{raw.slice(2, -2)}</strong>);
       } else if (raw.startsWith("*") && raw.endsWith("*")) {
-        parts.push(<em key={match.index} style={{ color: "#d1d5db" }}>{raw.slice(1, -1)}</em>);
+        parts.push(<em key={match.index} style={{ color: "var(--fg-secondary)" }}>{raw.slice(1, -1)}</em>);
       } else if (raw.startsWith("`") && raw.endsWith("`")) {
         parts.push(
-          <code key={match.index}>
+          <code key={match.index} style={{ background: "var(--bg-recessed)", padding: "0.1rem 0.3rem", borderRadius: "4px", fontSize: "0.86em", fontFamily: "monospace" }}>
             {raw.slice(1, -1)}
           </code>
         );
@@ -184,17 +186,17 @@ function MarkdownRenderer({ content }: { content: string }) {
 
     if (line.startsWith("### ")) {
       flushList();
-      elements.push(<h3 key={`h3-${i}`}>{renderInline(line.replace("### ", ""))}</h3>);
+      elements.push(<h3 key={`h3-${i}`} style={{ fontSize: "1.05rem", fontWeight: 600, margin: "1rem 0 0.4rem 0", color: "var(--fg-primary)", letterSpacing: "-0.01em" }}>{renderInline(line.replace("### ", ""))}</h3>);
     } else if (line.startsWith("## ")) {
       flushList();
-      elements.push(<h2 key={`h2-${i}`}>{renderInline(line.replace("## ", ""))}</h2>);
+      elements.push(<h2 key={`h2-${i}`} style={{ fontSize: "1.15rem", fontWeight: 600, margin: "1.1rem 0 0.4rem 0", color: "var(--fg-primary)", letterSpacing: "-0.01em" }}>{renderInline(line.replace("## ", ""))}</h2>);
     } else if (line.startsWith("# ")) {
       flushList();
-      elements.push(<h1 key={`h1-${i}`}>{renderInline(line.replace("# ", ""))}</h1>);
+      elements.push(<h1 key={`h1-${i}`} style={{ fontSize: "1.3rem", fontWeight: 600, margin: "1.25rem 0 0.5rem 0", color: "var(--fg-primary)", letterSpacing: "-0.02em" }}>{renderInline(line.replace("# ", ""))}</h1>);
     } else if (line.startsWith("> ")) {
       flushList();
       elements.push(
-        <blockquote key={`bq-${i}`}>
+        <blockquote key={`bq-${i}`} style={{ borderLeft: "2px solid var(--interactive)", paddingLeft: "1rem", margin: "0.75rem 0", color: "var(--fg-secondary)" }}>
           {renderInline(line.replace("> ", ""))}
         </blockquote>
       );
@@ -216,12 +218,12 @@ function MarkdownRenderer({ content }: { content: string }) {
       }
     } else if (line.trim() === "---") {
       flushList();
-      elements.push(<hr key={`hr-${i}`} />);
+      elements.push(<hr key={`hr-${i}`} style={{ border: "none", borderTop: "1px solid var(--border-color)", margin: "1rem 0" }} />);
     } else if (line.trim() === "") {
       flushList();
     } else {
       flushList();
-      elements.push(<p key={`p-${i}`}>{renderInline(line)}</p>);
+      elements.push(<p key={`p-${i}`} style={{ marginBottom: "0.75rem" }}>{renderInline(line)}</p>);
     }
   }
 
@@ -327,18 +329,6 @@ export default function Home() {
     );
   };
 
-  const openSourceDocument = (source: Source) => {
-    const isPdf = source.file_type === "pdf" || source.filename.toLowerCase().endsWith(".pdf");
-    let pageNum: string | undefined = undefined;
-    const loc = source.location || source.locations || "";
-    const match = loc.match(/\d+/);
-    if (match) pageNum = match[0];
-
-    const base = source.download_url || `/documents/${encodeURIComponent(source.document_id)}/file`;
-    const fullUrl = `${API}${base}${isPdf && pageNum ? `#page=${pageNum}` : ""}`;
-    window.open(fullUrl, "_blank", "noopener,noreferrer");
-  };
-
   // Submit Query
   const handleSubmit = async (overridePrompt?: string) => {
     const promptToSend = (overridePrompt || input).trim();
@@ -432,66 +422,88 @@ export default function Home() {
   const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
     e.target.style.height = "auto";
-    e.target.style.height = Math.min(e.target.scrollHeight, 180) + "px";
+    e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
   };
 
   const samplePrompts = [
-    "Explain the Backpropagation algorithm with step-by-step formulas",
+    "Explain the Backpropagation algorithm with formulas",
     "Which documents cover Decision Trees vs Random Forests?",
     "Key phases of a Compiler in CD Unit 1",
-    "What AWS serverless services were used in the internship diary?",
+    "What AWS serverless services were used in internship diary?",
   ];
 
   return (
-    <div style={{ display: "flex", width: "100vw", height: "100vh", overflow: "hidden", position: "relative" }}>
-      {/* Sleek Glassmorphism Collapsible Sidebar */}
+    <div style={{ display: "flex", width: "100vw", height: "100vh", overflow: "hidden", position: "relative", background: "var(--bg-background)", color: "var(--fg-primary)" }}>
+      {/* Vercel-Style Sidebar */}
       <aside
         style={{
-          width: sidebarOpen ? "var(--sidebar-w)" : "0px",
-          minWidth: sidebarOpen ? "var(--sidebar-w)" : "0px",
+          width: sidebarOpen ? "260px" : "0px",
+          minWidth: sidebarOpen ? "260px" : "0px",
           height: "100%",
-          background: "rgba(14, 16, 22, 0.85)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          borderRight: "1px solid rgba(255, 255, 255, 0.07)",
+          background: "var(--bg-background)",
+          boxShadow: sidebarOpen ? "1px 0 0 0 var(--border-color)" : "none",
           display: "flex",
           flexDirection: "column",
-          transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+          transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
           overflow: "hidden",
           zIndex: 30,
         }}
       >
         <div style={{ padding: "16px", display: "flex", flexDirection: "column", height: "100%" }}>
+          {/* Brand Header in Sidebar */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 8px 16px 8px" }}>
+            <div
+              style={{
+                width: "22px",
+                height: "22px",
+                borderRadius: "4px",
+                background: "var(--fg-primary)",
+                color: "var(--bg-background)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+              }}
+            >
+              K
+            </div>
+            <span style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--fg-primary)", letterSpacing: "-0.01em" }}>Kiwi AI</span>
+            <span style={{ fontSize: "0.7rem", color: "var(--fg-muted)", marginLeft: "auto" }}>v1.0</span>
+          </div>
+
           {/* New Chat Button */}
           <button
             onClick={createNewChat}
-            className="glass-panel-hover"
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
-              padding: "10px 14px",
-              borderRadius: "10px",
-              background: "rgba(255, 255, 255, 0.05)",
-              border: "1px solid rgba(255, 255, 255, 0.09)",
-              color: "#f3f4f6",
-              fontSize: "0.88rem",
+              gap: "8px",
+              padding: "8px 12px",
+              borderRadius: "6px",
+              background: "var(--bg-surface)",
+              boxShadow: "var(--shadow)",
+              color: "var(--fg-primary)",
+              fontSize: "0.85rem",
               fontWeight: 500,
               width: "100%",
               marginBottom: "16px",
+              transition: "background 0.15s ease",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-surface)")}
           >
-            <span style={{ fontSize: "1.1rem", color: "var(--kiwi-green)" }}>+</span>
+            <span style={{ fontSize: "1rem", color: "var(--interactive)", fontWeight: 600 }}>+</span>
             <span>New chat</span>
           </button>
 
-          {/* Chat History Header */}
-          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", padding: "0 8px 8px 8px" }}>
-            Conversations
+          {/* Conversations Header */}
+          <div style={{ fontSize: "0.7rem", color: "var(--fg-muted)", textTransform: "uppercase", letterSpacing: "0.06em", padding: "0 8px 6px 8px", fontWeight: 500 }}>
+            Recent Chats
           </div>
 
           {/* Session List */}
-          <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "3px" }}>
+          <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "2px" }}>
             {sessions.map((s) => {
               const isActive = s.id === activeSession?.id;
               return (
@@ -502,16 +514,17 @@ export default function Home() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: "9px 12px",
-                    borderRadius: "8px",
-                    fontSize: "0.85rem",
+                    padding: "7px 10px",
+                    borderRadius: "6px",
+                    fontSize: "0.83rem",
                     cursor: "pointer",
-                    color: isActive ? "#ffffff" : "#9ca3af",
-                    background: isActive ? "rgba(255, 255, 255, 0.08)" : "transparent",
-                    transition: "all 0.15s ease",
+                    color: isActive ? "var(--fg-primary)" : "var(--fg-secondary)",
+                    background: isActive ? "var(--bg-hover)" : "transparent",
+                    fontWeight: isActive ? 500 : 400,
+                    transition: "all 0.1s ease",
                   }}
                   onMouseEnter={(e) => {
-                    if (!isActive) e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+                    if (!isActive) e.currentTarget.style.background = "var(--bg-recessed)";
                   }}
                   onMouseLeave={(e) => {
                     if (!isActive) e.currentTarget.style.background = "transparent";
@@ -522,7 +535,7 @@ export default function Home() {
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
-                      maxWidth: "180px",
+                      maxWidth: "170px",
                     }}
                   >
                     {s.title}
@@ -533,18 +546,18 @@ export default function Home() {
                     title="Delete chat"
                     style={{
                       opacity: isActive ? 0.7 : 0,
-                      color: "#9ca3af",
-                      fontSize: "0.85rem",
-                      padding: "2px 6px",
+                      color: "var(--fg-muted)",
+                      fontSize: "0.75rem",
+                      padding: "2px 4px",
                       borderRadius: "4px",
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.opacity = "1";
-                      e.currentTarget.style.color = "#f87171";
+                      e.currentTarget.style.color = "#E5484D";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.opacity = isActive ? "0.7" : "0";
-                      e.currentTarget.style.color = "#9ca3af";
+                      e.currentTarget.style.color = "var(--fg-muted)";
                     }}
                   >
                     ✕
@@ -557,48 +570,32 @@ export default function Home() {
           {/* Sidebar Footer */}
           <div
             style={{
-              paddingTop: "14px",
-              borderTop: "1px solid rgba(255, 255, 255, 0.07)",
+              paddingTop: "12px",
+              boxShadow: "0 -1px 0 0 var(--border-color)",
               display: "flex",
               alignItems: "center",
-              gap: "10px",
-              fontSize: "0.82rem",
-              color: "#9ca3af",
+              justifyContent: "space-between",
+              fontSize: "0.78rem",
+              color: "var(--fg-secondary)",
             }}
           >
-            <div
-              style={{
-                width: "28px",
-                height: "28px",
-                borderRadius: "50%",
-                background: "rgba(16, 163, 127, 0.15)",
-                border: "1px solid rgba(16, 163, 127, 0.3)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "0.95rem",
-              }}
-            >
-              🥝
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#398E4A", display: "inline-block" }} />
+              <span style={{ fontSize: "0.78rem", fontWeight: 500 }}>159 documents</span>
             </div>
-            <div>
-              <div style={{ color: "#ffffff", fontWeight: 600, fontSize: "0.84rem" }}>KIWI AI</div>
-              <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Academic Document Agent</div>
-            </div>
+            <span style={{ fontSize: "0.72rem", color: "var(--fg-muted)" }}>SAM7 RAG</span>
           </div>
         </div>
       </aside>
 
-      {/* Main Chat Interface */}
-      <main style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
-        {/* Top Navbar */}
+      {/* Main Workspace */}
+      <main style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", position: "relative", background: "var(--bg-background)" }}>
+        {/* Top Header with ThemeToggle */}
         <header
           style={{
             height: "54px",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
-            background: "rgba(15, 16, 21, 0.6)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
+            boxShadow: "0 1px 0 0 var(--border-color)",
+            background: "var(--bg-background)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -606,148 +603,112 @@ export default function Home() {
             zIndex: 10,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               title={sidebarOpen ? "Collapse sidebar" : "Open sidebar"}
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#9ca3af",
-                background: "rgba(255, 255, 255, 0.04)",
-                border: "1px solid rgba(255, 255, 255, 0.06)",
-              }}
+              className="vercel-button"
+              style={{ padding: "5px 8px" }}
             >
               {sidebarOpen ? "◀" : "▶"}
             </button>
 
-            <span style={{ fontSize: "0.92rem", fontWeight: 600, color: "#ffffff" }}>
-              {activeSession?.title || "Kiwi Chat"}
+            <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--fg-primary)", letterSpacing: "-0.01em" }}>
+              {activeSession?.title || "New chat"}
             </span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <span
-              style={{
-                fontSize: "0.74rem",
-                color: "var(--kiwi-green)",
-                background: "rgba(16, 163, 127, 0.1)",
-                border: "1px solid rgba(16, 163, 127, 0.2)",
-                padding: "3px 9px",
-                borderRadius: "999px",
-                fontWeight: 500,
-              }}
-            >
-              • 159 docs loaded
-            </span>
-
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             {activeSession?.messages.length > 0 && (
               <button
                 onClick={clearCurrentChat}
-                title="Clear messages"
-                style={{
-                  fontSize: "0.78rem",
-                  color: "#9ca3af",
-                  padding: "4px 8px",
-                  borderRadius: "6px",
-                  background: "rgba(255, 255, 255, 0.04)",
-                }}
+                className="vercel-button"
+                style={{ fontSize: "0.78rem", padding: "4px 8px" }}
               >
-                Clear
+                Clear chat
               </button>
             )}
+
+            {/* INTEGRATED EXACT ANIMATED DAY/NIGHT TOGGLE */}
+            <ThemeToggle />
           </div>
         </header>
 
-        {/* Message Feed Area */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px 0 160px 0" }}>
+        {/* Content Stream Area */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "24px 0 160px 0" }}>
           {activeSession?.messages.length === 0 ? (
-            /* Minimal ChatGPT-Style Welcome Hero */
+            /* Vercel-Style Minimal Welcome */
             <div
               className="animate-fade-in"
               style={{
-                maxWidth: "760px",
-                margin: "0 auto",
-                padding: "40px 20px",
+                maxWidth: "680px",
+                margin: "40px auto 0 auto",
+                padding: "0 20px",
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "center",
-                textAlign: "center",
               }}
             >
-              {/* Glowing Kiwi Glass Icon */}
-              <div
-                style={{
-                  width: "60px",
-                  height: "60px",
-                  borderRadius: "18px",
-                  background: "rgba(16, 163, 127, 0.1)",
-                  border: "1px solid rgba(16, 163, 127, 0.3)",
-                  boxShadow: "0 0 35px var(--kiwi-green-glow)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "2rem",
-                  marginBottom: "20px",
-                }}
-              >
-                🥝
-              </div>
-
-              <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: "#ffffff", marginBottom: "8px" }}>
-                What would you like to study?
+              <h1 style={{ fontSize: "2rem", fontWeight: 600, color: "var(--fg-primary)", letterSpacing: "-0.025em", marginBottom: "8px" }}>
+                Ask Kiwi.
               </h1>
-              <p style={{ fontSize: "0.92rem", color: "var(--text-secondary)", maxWidth: "520px", marginBottom: "36px", lineHeight: 1.5 }}>
-                Ask any question about your Semester 7 courses. Answers are synthesized directly with exact references from your notes.
+              <p style={{ fontSize: "0.95rem", color: "var(--fg-secondary)", marginBottom: "32px", lineHeight: 1.5 }}>
+                Semantic search across your Semester 7 study documents. Answers are generated with exact citations, source previews, and direct document access.
               </p>
 
-              {/* Minimal Prompt Suggestions Grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "10px", width: "100%" }}>
+              {/* Sample Prompts */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div style={{ fontSize: "0.72rem", color: "var(--fg-muted)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 500, marginBottom: "2px" }}>
+                  Suggested queries
+                </div>
                 {samplePrompts.map((promptText, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSubmit(promptText)}
-                    className="glass-panel glass-panel-hover"
+                    className="vercel-card"
                     style={{
-                      padding: "14px 16px",
-                      borderRadius: "12px",
+                      padding: "12px 16px",
                       textAlign: "left",
-                      color: "#d1d5db",
-                      fontSize: "0.85rem",
-                      lineHeight: 1.45,
+                      color: "var(--fg-primary)",
+                      fontSize: "0.875rem",
+                      fontWeight: 400,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      transition: "box-shadow 0.15s ease, background 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = "0 0 0 1px var(--interactive)";
+                      e.currentTarget.style.background = "var(--bg-surface)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = "var(--shadow)";
+                      e.currentTarget.style.background = "var(--bg-surface)";
                     }}
                   >
-                    <span style={{ color: "var(--kiwi-green)", marginRight: "8px" }}>→</span>
                     <span>{promptText}</span>
+                    <span style={{ color: "var(--interactive)", fontSize: "0.85rem" }}>→</span>
                   </button>
                 ))}
               </div>
             </div>
           ) : (
-            /* Conversation Stream */
-            <div style={{ maxWidth: "800px", margin: "0 auto", padding: "0 20px", display: "flex", flexDirection: "column", gap: "28px" }}>
+            /* Chat Messages */
+            <div style={{ maxWidth: "760px", margin: "0 auto", padding: "0 20px", display: "flex", flexDirection: "column", gap: "32px" }}>
               {activeSession?.messages.map((msg) => {
                 const isUser = msg.role === "user";
                 return (
                   <div key={msg.id} className="animate-fade-in" style={{ display: "flex", flexDirection: "column" }}>
                     {isUser ? (
-                      /* User Message Bubble */
-                      <div style={{ alignSelf: "flex-end", maxWidth: "80%" }}>
+                      /* User Question */
+                      <div style={{ alignSelf: "flex-end", maxWidth: "85%" }}>
                         <div
                           style={{
-                            background: "rgba(35, 40, 52, 0.75)",
-                            backdropFilter: "blur(12px)",
-                            WebkitBackdropFilter: "blur(12px)",
-                            border: "1px solid rgba(255, 255, 255, 0.1)",
-                            padding: "12px 18px",
-                            borderRadius: "18px 18px 4px 18px",
-                            color: "#ffffff",
-                            fontSize: "0.95rem",
-                            lineHeight: 1.55,
+                            background: "var(--fg-primary)",
+                            color: "var(--bg-background)",
+                            padding: "10px 16px",
+                            borderRadius: "12px 12px 2px 12px",
+                            fontSize: "0.92rem",
+                            lineHeight: 1.5,
                             wordBreak: "break-word",
                           }}
                         >
@@ -755,98 +716,148 @@ export default function Home() {
                         </div>
                       </div>
                     ) : (
-                      /* Assistant Message (ChatGPT style) */
-                      <div style={{ display: "flex", gap: "14px", alignItems: "flex-start", width: "100%" }}>
-                        <div
-                          style={{
-                            width: "30px",
-                            height: "30px",
-                            borderRadius: "50%",
-                            background: "rgba(16, 163, 127, 0.15)",
-                            border: "1px solid rgba(16, 163, 127, 0.3)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "1rem",
-                            flexShrink: 0,
-                            marginTop: "2px",
-                          }}
-                        >
-                          🥝
+                      /* Assistant Answer & Sources */
+                      <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: "16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <div
+                            style={{
+                              width: "20px",
+                              height: "20px",
+                              borderRadius: "4px",
+                              background: "var(--interactive)",
+                              color: "#FFFFFF",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "0.7rem",
+                              fontWeight: 600,
+                            }}
+                          >
+                            K
+                          </div>
+                          <span style={{ fontSize: "0.8rem", fontWeight: 500, color: "var(--fg-secondary)" }}>Kiwi Assistant</span>
+                          <span style={{ fontSize: "0.72rem", color: "var(--fg-muted)", marginLeft: "auto" }}>{msg.timestamp}</span>
                         </div>
 
-                        <div style={{ flex: 1, overflow: "hidden" }}>
+                        {/* Answer Text */}
+                        <div style={{ paddingLeft: "28px" }}>
                           <MarkdownRenderer content={msg.content} />
-
-                          {/* Minimal Glassmorphic Source Pills */}
-                          {msg.sources && msg.sources.length > 0 && (
-                            <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.07)" }}>
-                              <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>
-                                Referenced Course Documents
-                              </div>
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                                {msg.sources.map((src, sIdx) => {
-                                  const locText = src.location || src.locations || "";
-                                  return (
-                                    <button
-                                      key={sIdx}
-                                      onClick={() => openSourceDocument(src)}
-                                      className="glass-pill"
-                                      title="Open original document at referenced page"
-                                      style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "6px",
-                                        padding: "5px 10px",
-                                        borderRadius: "999px",
-                                        fontSize: "0.78rem",
-                                        color: "#cbd5e1",
-                                      }}
-                                    >
-                                      <span>📄</span>
-                                      <span style={{ fontWeight: 500, color: "#ffffff" }}>{src.filename}</span>
-                                      {locText && (
-                                        <span style={{ color: "var(--kiwi-green)", fontSize: "0.75rem" }}>
-                                          • {locText}
-                                        </span>
-                                      )}
-                                      <span style={{ fontSize: "0.7rem", opacity: 0.6 }}>↗</span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
                         </div>
+
+                        {/* Source Document Cards */}
+                        {msg.sources && msg.sources.length > 0 && (
+                          <div style={{ paddingLeft: "28px", marginTop: "4px" }}>
+                            <div style={{ fontSize: "0.72rem", color: "var(--fg-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px", fontWeight: 500 }}>
+                              Retrieved Sources ({msg.sources.length})
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                              {msg.sources.map((src, sIdx) => {
+                                const locText = src.location || src.locations || "";
+                                const isPdf = src.file_type === "pdf" || src.filename.toLowerCase().endsWith(".pdf");
+                                let pageNum: string | undefined = undefined;
+                                const match = locText.match(/\d+/);
+                                if (match) pageNum = match[0];
+
+                                const base = src.download_url || `/documents/${encodeURIComponent(src.document_id)}/file`;
+                                const viewUrl = `${API}${base}${isPdf && pageNum ? `#page=${pageNum}` : ""}`;
+                                const downloadUrl = `${API}${base}`;
+
+                                return (
+                                  <div
+                                    key={sIdx}
+                                    className="vercel-panel"
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "space-between",
+                                      padding: "10px 14px",
+                                      gap: "12px",
+                                    }}
+                                  >
+                                    <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
+                                      <span style={{ fontSize: "1rem", color: "var(--fg-muted)", flexShrink: 0 }}>📄</span>
+                                      <div style={{ minWidth: 0, flex: 1 }}>
+                                        <div
+                                          style={{
+                                            fontWeight: 500,
+                                            color: "var(--fg-primary)",
+                                            fontSize: "0.85rem",
+                                            whiteSpace: "nowrap",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                          }}
+                                          title={src.filename}
+                                        >
+                                          {src.filename}
+                                        </div>
+                                        {locText && (
+                                          <div style={{ fontSize: "0.72rem", color: "var(--interactive)", marginTop: "1px", fontWeight: 500 }}>
+                                            {locText}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+                                      <a
+                                        href={viewUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="vercel-button"
+                                        style={{ fontSize: "0.78rem", padding: "4px 10px", color: "var(--interactive)" }}
+                                      >
+                                        <span>Open</span>
+                                        <span style={{ fontSize: "0.7rem" }}>↗</span>
+                                      </a>
+
+                                      <a
+                                        href={downloadUrl}
+                                        download={src.filename}
+                                        className="vercel-button"
+                                        style={{ fontSize: "0.78rem", padding: "4px 10px" }}
+                                      >
+                                        <span>Download</span>
+                                        <span style={{ fontSize: "0.7rem" }}>↓</span>
+                                      </a>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
                 );
               })}
 
-              {/* Generating / Loading indicator */}
+              {/* Loading Indicator */}
               {loading && (
-                <div className="animate-fade-in" style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+                <div className="animate-fade-in" style={{ display: "flex", gap: "12px", alignItems: "center", paddingLeft: "4px" }}>
                   <div
                     style={{
-                      width: "30px",
-                      height: "30px",
-                      borderRadius: "50%",
-                      background: "rgba(16, 163, 127, 0.15)",
-                      border: "1px solid rgba(16, 163, 127, 0.3)",
+                      width: "20px",
+                      height: "20px",
+                      borderRadius: "4px",
+                      background: "var(--interactive)",
+                      color: "#FFFFFF",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "1rem",
-                      flexShrink: 0,
+                      fontSize: "0.7rem",
+                      fontWeight: 600,
                     }}
                   >
-                    🥝
+                    K
                   </div>
-                  <div className="loading-dots" style={{ display: "flex", alignItems: "center", gap: "2px" }}>
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                  <div style={{ fontSize: "0.85rem", color: "var(--fg-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span>Searching documents & generating answer</span>
+                    <div className="loading-dots">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -856,15 +867,15 @@ export default function Home() {
           )}
         </div>
 
-        {/* Floating Glassmorphic Input Dock (ChatGPT Style) */}
+        {/* Vercel-Style Floating Input Dock */}
         <div
           style={{
             position: "absolute",
             bottom: "0",
             left: "0",
             right: "0",
-            padding: "16px 20px 22px 20px",
-            background: "linear-gradient(to top, var(--bg-deep) 70%, transparent)",
+            padding: "16px 20px 24px 20px",
+            background: "linear-gradient(to top, var(--bg-background) 75%, transparent)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -872,21 +883,18 @@ export default function Home() {
           }}
         >
           <div
+            className="vercel-card"
             style={{
               width: "100%",
-              maxWidth: "760px",
-              background: "rgba(24, 27, 36, 0.78)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(255, 255, 255, 0.11)",
-              borderRadius: "24px",
-              padding: "10px 14px 10px 18px",
+              maxWidth: "720px",
+              background: "var(--bg-surface)",
+              borderRadius: "12px",
+              padding: "10px 12px 10px 16px",
               display: "flex",
               alignItems: "flex-end",
               gap: "10px",
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.4)",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.12), var(--shadow)",
               pointerEvents: "auto",
-              transition: "border-color 0.2s ease, box-shadow 0.2s ease",
             }}
           >
             <textarea
@@ -894,14 +902,14 @@ export default function Home() {
               value={input}
               onChange={handleTextareaInput}
               onKeyDown={handleKeyDown}
-              placeholder="Ask Kiwi about your semester notes..."
+              placeholder="Ask Kiwi about your notes (e.g. Find CD experiment 630)..."
               rows={1}
               style={{
                 flex: 1,
-                fontSize: "0.95rem",
-                color: "#ffffff",
+                fontSize: "0.92rem",
+                color: "var(--fg-primary)",
                 resize: "none",
-                maxHeight: "180px",
+                maxHeight: "160px",
                 lineHeight: 1.5,
                 padding: "4px 0",
               }}
@@ -910,27 +918,27 @@ export default function Home() {
             <button
               onClick={() => handleSubmit()}
               disabled={!input.trim() || loading}
+              className={input.trim() && !loading ? "vercel-button-primary" : "vercel-button"}
               style={{
-                width: "34px",
-                height: "34px",
-                borderRadius: "50%",
-                background: input.trim() && !loading ? "var(--kiwi-green)" : "rgba(255, 255, 255, 0.08)",
-                color: input.trim() && !loading ? "#ffffff" : "#6b7280",
+                width: "32px",
+                height: "32px",
+                padding: 0,
+                borderRadius: "6px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "1rem",
-                fontWeight: 600,
                 flexShrink: 0,
-                boxShadow: input.trim() && !loading ? "0 0 14px var(--kiwi-green-glow)" : "none",
+                background: input.trim() && !loading ? "var(--interactive)" : "var(--bg-recessed)",
+                color: input.trim() && !loading ? "#FFFFFF" : "var(--fg-muted)",
+                cursor: input.trim() && !loading ? "pointer" : "default",
               }}
             >
               ↑
             </button>
           </div>
 
-          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "8px", pointerEvents: "auto" }}>
-            Kiwi AI synthesizes answers directly from your Semester 7 course materials.
+          <div style={{ fontSize: "0.72rem", color: "var(--fg-muted)", marginTop: "8px", pointerEvents: "auto" }}>
+            SAM7 AI Document Assistant • Grounded RAG
           </div>
         </div>
       </main>
