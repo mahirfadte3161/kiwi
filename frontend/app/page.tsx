@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "./components/ThemeToggle";
 
-const API = "http://localhost:8000";
+const API = "https://kiwi-9w1p.onrender.com"; //"http://localhost:8000";
 
 type Source = {
   document_id: string;
