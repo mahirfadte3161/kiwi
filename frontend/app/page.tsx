@@ -583,7 +583,6 @@ export default function Home() {
               <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#398E4A", display: "inline-block" }} />
               <span style={{ fontSize: "0.78rem", fontWeight: 500 }}>159 documents</span>
             </div>
-            <span style={{ fontSize: "0.72rem", color: "var(--fg-muted)" }}>SAM7 RAG</span>
           </div>
         </div>
       </aside>
@@ -935,10 +934,6 @@ export default function Home() {
             >
               ↑
             </button>
-          </div>
-
-          <div style={{ fontSize: "0.72rem", color: "var(--fg-muted)", marginTop: "8px", pointerEvents: "auto" }}>
-            SAM7 AI Document Assistant • Grounded RAG
           </div>
         </div>
       </main>

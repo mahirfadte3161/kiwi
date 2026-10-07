@@ -98,7 +98,9 @@ button:active {
 input, textarea {
   font-family: inherit;
   color: inherit;
+  border: none;
   outline: none;
+  box-shadow: none;
   background: transparent;
 }
 
