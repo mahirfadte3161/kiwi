@@ -426,10 +426,10 @@ export default function Home() {
   };
 
   const samplePrompts = [
-    "Explain the Backpropagation algorithm with formulas",
-    "Which documents cover Decision Trees vs Random Forests?",
-    "Key phases of a Compiler in CD Unit 1",
-    "What AWS serverless services were used in internship diary?",
+    "find cd exp 1",
+    "wht are tokens",
+    "What is the difference between supervised and unsupervised learning?",
+    "give me cd unit 1",
   ];
 
   return (
