@@ -54,6 +54,7 @@
 
 html, body {
   height: 100%;
+  height: 100dvh;
   width: 100%;
   background-color: var(--bg-background);
   color: var(--fg-primary);
@@ -62,6 +63,8 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
   transition: background-color 0.2s ease, color 0.2s ease;
+  /* Prevent overscroll bounce on iOS */
+  overscroll-behavior: none;
 }
 
 /* Custom Sleek Scrollbar */
@@ -529,4 +532,143 @@ input, textarea {
 
 @keyframes fly {
   50% { translate: 0 -25%; }
+}
+
+
+/* ========================================================== */
+/* MOBILE RESPONSIVE STYLES                                    */
+/* ========================================================== */
+
+/* Mobile sidebar overlay backdrop */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 25;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease forwards;
+}
+
+@media (max-width: 768px) {
+  /* Root layout: use dvh for real mobile viewport height */
+  .app-root {
+    height: 100dvh !important;
+  }
+
+  /* Sidebar: overlay on mobile instead of pushing content */
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100dvh !important;
+    z-index: 30;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  /* Show backdrop when sidebar open */
+  .sidebar-backdrop {
+    display: block;
+  }
+
+  /* Main area always full width on mobile */
+  .main-area {
+    width: 100% !important;
+    flex: 1 !important;
+  }
+
+  /* Header: tighter on mobile */
+  .app-header {
+    padding: 0 12px !important;
+  }
+
+  /* Bigger touch targets */
+  .vercel-button {
+    min-height: 40px;
+    padding: 8px 12px;
+  }
+
+  /* Chat messages: full width, less side padding */
+  .chat-stream {
+    padding: 16px 0 0 0 !important;
+  }
+
+  .chat-messages-container {
+    padding: 0 12px !important;
+    gap: 24px !important;
+  }
+
+  /* Welcome screen padding */
+  .welcome-screen {
+    padding: 0 16px !important;
+    margin-top: 24px !important;
+  }
+
+  /* Input dock: account for safe area at bottom */
+  .input-dock {
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom)) 12px !important;
+  }
+
+  .input-dock-inner {
+    max-width: 100% !important;
+    border-radius: 14px !important;
+  }
+
+  /* Source cards: stack cleanly */
+  .source-card {
+    padding: 10px 12px !important;
+  }
+
+  /* User message bubble */
+  .user-bubble {
+    max-width: 95% !important;
+  }
+
+  /* Assistant answer area */
+  .assistant-answer {
+    padding-left: 0 !important;
+  }
+
+  .assistant-header {
+    gap: 6px;
+  }
+
+  /* Suggested prompts: full width */
+  .sample-prompt-btn {
+    font-size: 0.83rem !important;
+  }
+
+  /* Welcome heading smaller */
+  .welcome-heading {
+    font-size: 1.6rem !important;
+  }
+
+  /* Markdown body slightly smaller */
+  .markdown-body {
+    font-size: 0.9rem;
+  }
+
+  /* Sidebar session list items: bigger touch area */
+  .session-item {
+    padding: 10px 10px !important;
+    min-height: 44px;
+  }
+
+  /* New chat button: bigger */
+  .new-chat-btn {
+    min-height: 44px !important;
+    padding: 10px 14px !important;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 400px) {
+  .welcome-heading {
+    font-size: 1.4rem !important;
+  }
+
+  .input-dock {
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom)) 8px !important;
+  }
 }

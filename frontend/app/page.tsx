@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "./components/ThemeToggle";
 
-const API = "https://kiwi-9w1p.onrender.com"; //"http://localhost:8000";
+const API = "https://kiwi-9w1p.onrender.com"; //\"http://localhost:8000\";
 
 type Source = {
   document_id: string;
@@ -118,6 +118,8 @@ function MarkdownRenderer({ content }: { content: string }) {
               background: "none",
               border: "none",
               cursor: "pointer",
+              padding: "4px 8px",
+              minHeight: "32px",
             }}
           >
             {isCopied ? "Copied" : "Copy"}
@@ -238,10 +240,26 @@ export default function Home() {
   const [activeSessionId, setActiveSessionId] = useState<string>("");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // default closed; opened after mount if desktop
+  const [isMobile, setIsMobile] = useState(false);
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Detect mobile and set initial sidebar state
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      // Only auto-open sidebar on desktop
+      if (!mobile) {
+        setSidebarOpen(true);
+      }
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Initialize or load chats from localStorage
   useEffect(() => {
@@ -287,6 +305,8 @@ export default function Home() {
 
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
 
+  const closeSidebar = () => setSidebarOpen(false);
+
   const createNewChat = () => {
     const newSession: ChatSession = {
       id: "session_" + Date.now(),
@@ -297,6 +317,7 @@ export default function Home() {
     setSessions((prev) => [newSession, ...prev]);
     setActiveSessionId(newSession.id);
     setInput("");
+    if (isMobile) closeSidebar();
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
@@ -413,7 +434,8 @@ export default function Home() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    // On mobile, Enter should add a newline (not submit). Submit via button only.
+    if (e.key === "Enter" && !e.shiftKey && !isMobile) {
       e.preventDefault();
       handleSubmit();
     }
@@ -426,16 +448,37 @@ export default function Home() {
   };
 
   const samplePrompts = [
-    "find cd exp 1",
-    "wht are tokens",
+    "find cd experiment 1",
+    "what are tokens",
     "What is the difference between supervised and unsupervised learning?",
-    "give me cd unit 1",
+    "give me compiler design unit 1",
   ];
 
   return (
-    <div style={{ display: "flex", width: "100vw", height: "100vh", overflow: "hidden", position: "relative", background: "var(--bg-background)", color: "var(--fg-primary)" }}>
-      {/* Vercel-Style Sidebar */}
+    <div
+      className="app-root"
+      style={{
+        display: "flex",
+        width: "100vw",
+        height: "100dvh",
+        overflow: "hidden",
+        position: "relative",
+        background: "var(--bg-background)",
+        color: "var(--fg-primary)",
+      }}
+    >
+      {/* Mobile sidebar backdrop — tap to close */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={closeSidebar}
+          aria-label="Close sidebar"
+        />
+      )}
+
+      {/* Sidebar */}
       <aside
+        className="sidebar"
         style={{
           width: sidebarOpen ? "260px" : "0px",
           minWidth: sidebarOpen ? "260px" : "0px",
@@ -447,6 +490,7 @@ export default function Home() {
           transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
           overflow: "hidden",
           zIndex: 30,
+          flexShrink: 0,
         }}
       >
         <div style={{ padding: "16px", display: "flex", flexDirection: "column", height: "100%" }}>
@@ -464,6 +508,7 @@ export default function Home() {
                 justifyContent: "center",
                 fontSize: "0.75rem",
                 fontWeight: 600,
+                flexShrink: 0,
               }}
             >
               K
@@ -475,6 +520,7 @@ export default function Home() {
           {/* New Chat Button */}
           <button
             onClick={createNewChat}
+            className="new-chat-btn"
             style={{
               display: "flex",
               alignItems: "center",
@@ -489,6 +535,7 @@ export default function Home() {
               width: "100%",
               marginBottom: "16px",
               transition: "background 0.15s ease",
+              minHeight: "44px",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-surface)")}
@@ -509,12 +556,16 @@ export default function Home() {
               return (
                 <div
                   key={s.id}
-                  onClick={() => setActiveSessionId(s.id)}
+                  className="session-item"
+                  onClick={() => {
+                    setActiveSessionId(s.id);
+                    if (isMobile) closeSidebar();
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: "7px 10px",
+                    padding: "10px 10px",
                     borderRadius: "6px",
                     fontSize: "0.83rem",
                     cursor: "pointer",
@@ -522,6 +573,7 @@ export default function Home() {
                     background: isActive ? "var(--bg-hover)" : "transparent",
                     fontWeight: isActive ? 500 : 400,
                     transition: "all 0.1s ease",
+                    minHeight: "44px",
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive) e.currentTarget.style.background = "var(--bg-recessed)";
@@ -548,8 +600,10 @@ export default function Home() {
                       opacity: isActive ? 0.7 : 0,
                       color: "var(--fg-muted)",
                       fontSize: "0.75rem",
-                      padding: "2px 4px",
+                      padding: "4px 6px",
                       borderRadius: "4px",
+                      minWidth: "28px",
+                      minHeight: "28px",
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.opacity = "1";
@@ -588,9 +642,22 @@ export default function Home() {
       </aside>
 
       {/* Main Workspace */}
-      <main style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", position: "relative", background: "var(--bg-background)" }}>
-        {/* Top Header with ThemeToggle */}
+      <main
+        className="main-area"
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          position: "relative",
+          background: "var(--bg-background)",
+          minWidth: 0, // prevent flex blowout
+          overflow: "hidden",
+        }}
+      >
+        {/* Top Header */}
         <header
+          className="app-header"
           style={{
             height: "54px",
             boxShadow: "0 1px 0 0 var(--border-color)",
@@ -600,54 +667,78 @@ export default function Home() {
             justifyContent: "space-between",
             padding: "0 20px",
             zIndex: 10,
+            flexShrink: 0,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               title={sidebarOpen ? "Collapse sidebar" : "Open sidebar"}
               className="vercel-button"
-              style={{ padding: "5px 8px" }}
+              style={{ padding: "8px 10px", flexShrink: 0, minHeight: "40px" }}
             >
               {sidebarOpen ? "◀" : "▶"}
             </button>
 
-            <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--fg-primary)", letterSpacing: "-0.01em" }}>
+            <span
+              style={{
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                color: "var(--fg-primary)",
+                letterSpacing: "-0.01em",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
               {activeSession?.title || "New chat"}
             </span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
             {activeSession?.messages.length > 0 && (
               <button
                 onClick={clearCurrentChat}
                 className="vercel-button"
-                style={{ fontSize: "0.78rem", padding: "4px 8px" }}
+                style={{ fontSize: "0.78rem", padding: "6px 10px", minHeight: "36px" }}
               >
-                Clear chat
+                Clear
               </button>
             )}
 
-            {/* INTEGRATED EXACT ANIMATED DAY/NIGHT TOGGLE */}
+            {/* Animated Day/Night Toggle */}
             <ThemeToggle />
           </div>
         </header>
 
-        {/* Content Stream Area */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "24px 0 160px 0" }}>
+        {/* Content Stream Area — scrollable */}
+        <div
+          className="chat-stream"
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            overflowX: "hidden",
+            padding: "24px 0 0 0",
+            WebkitOverflowScrolling: "touch", // momentum scroll on iOS
+          }}
+        >
           {activeSession?.messages.length === 0 ? (
-            /* Vercel-Style Minimal Welcome */
+            /* Welcome Screen */
             <div
-              className="animate-fade-in"
+              className="welcome-screen animate-fade-in"
               style={{
                 maxWidth: "680px",
                 margin: "40px auto 0 auto",
                 padding: "0 20px",
                 display: "flex",
                 flexDirection: "column",
+                paddingBottom: "180px",
               }}
             >
-              <h1 style={{ fontSize: "2rem", fontWeight: 600, color: "var(--fg-primary)", letterSpacing: "-0.025em", marginBottom: "8px" }}>
+              <h1
+                className="welcome-heading"
+                style={{ fontSize: "2rem", fontWeight: 600, color: "var(--fg-primary)", letterSpacing: "-0.025em", marginBottom: "8px" }}
+              >
                 Ask Kiwi.
               </h1>
               <p style={{ fontSize: "0.95rem", color: "var(--fg-secondary)", marginBottom: "32px", lineHeight: 1.5 }}>
@@ -663,9 +754,9 @@ export default function Home() {
                   <button
                     key={idx}
                     onClick={() => handleSubmit(promptText)}
-                    className="vercel-card"
+                    className="vercel-card sample-prompt-btn"
                     style={{
-                      padding: "12px 16px",
+                      padding: "14px 16px",
                       textAlign: "left",
                       color: "var(--fg-primary)",
                       fontSize: "0.875rem",
@@ -674,6 +765,7 @@ export default function Home() {
                       alignItems: "center",
                       justifyContent: "space-between",
                       transition: "box-shadow 0.15s ease, background 0.15s ease",
+                      minHeight: "52px",
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.boxShadow = "0 0 0 1px var(--interactive)";
@@ -685,21 +777,32 @@ export default function Home() {
                     }}
                   >
                     <span>{promptText}</span>
-                    <span style={{ color: "var(--interactive)", fontSize: "0.85rem" }}>→</span>
+                    <span style={{ color: "var(--interactive)", fontSize: "0.85rem", marginLeft: "8px", flexShrink: 0 }}>→</span>
                   </button>
                 ))}
               </div>
             </div>
           ) : (
             /* Chat Messages */
-            <div style={{ maxWidth: "760px", margin: "0 auto", padding: "0 20px", display: "flex", flexDirection: "column", gap: "32px" }}>
+            <div
+              className="chat-messages-container"
+              style={{
+                maxWidth: "760px",
+                margin: "0 auto",
+                padding: "0 20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "32px",
+                paddingBottom: "180px",
+              }}
+            >
               {activeSession?.messages.map((msg) => {
                 const isUser = msg.role === "user";
                 return (
                   <div key={msg.id} className="animate-fade-in" style={{ display: "flex", flexDirection: "column" }}>
                     {isUser ? (
                       /* User Question */
-                      <div style={{ alignSelf: "flex-end", maxWidth: "85%" }}>
+                      <div className="user-bubble" style={{ alignSelf: "flex-end", maxWidth: "85%" }}>
                         <div
                           style={{
                             background: "var(--fg-primary)",
@@ -717,7 +820,7 @@ export default function Home() {
                     ) : (
                       /* Assistant Answer & Sources */
                       <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: "16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div className="assistant-header" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                           <div
                             style={{
                               width: "20px",
@@ -730,6 +833,7 @@ export default function Home() {
                               justifyContent: "center",
                               fontSize: "0.7rem",
                               fontWeight: 600,
+                              flexShrink: 0,
                             }}
                           >
                             K
@@ -739,13 +843,13 @@ export default function Home() {
                         </div>
 
                         {/* Answer Text */}
-                        <div style={{ paddingLeft: "28px" }}>
+                        <div className="assistant-answer" style={{ paddingLeft: "28px" }}>
                           <MarkdownRenderer content={msg.content} />
                         </div>
 
                         {/* Source Document Cards */}
                         {msg.sources && msg.sources.length > 0 && (
-                          <div style={{ paddingLeft: "28px", marginTop: "4px" }}>
+                          <div style={{ paddingLeft: "0px", marginTop: "4px" }}>
                             <div style={{ fontSize: "0.72rem", color: "var(--fg-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px", fontWeight: 500 }}>
                               Retrieved Sources ({msg.sources.length})
                             </div>
@@ -764,7 +868,7 @@ export default function Home() {
                                 return (
                                   <div
                                     key={sIdx}
-                                    className="vercel-panel"
+                                    className="vercel-panel source-card"
                                     style={{
                                       display: "flex",
                                       alignItems: "center",
@@ -803,7 +907,7 @@ export default function Home() {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="vercel-button"
-                                        style={{ fontSize: "0.78rem", padding: "4px 10px", color: "var(--interactive)" }}
+                                        style={{ fontSize: "0.78rem", padding: "6px 10px", color: "var(--interactive)", minHeight: "36px" }}
                                       >
                                         <span>Open</span>
                                         <span style={{ fontSize: "0.7rem" }}>↗</span>
@@ -813,10 +917,9 @@ export default function Home() {
                                         href={downloadUrl}
                                         download={src.filename}
                                         className="vercel-button"
-                                        style={{ fontSize: "0.78rem", padding: "4px 10px" }}
+                                        style={{ fontSize: "0.78rem", padding: "6px 10px", minHeight: "36px" }}
                                       >
-                                        <span>Download</span>
-                                        <span style={{ fontSize: "0.7rem" }}>↓</span>
+                                        <span>↓</span>
                                       </a>
                                     </div>
                                   </div>
@@ -846,12 +949,13 @@ export default function Home() {
                       justifyContent: "center",
                       fontSize: "0.7rem",
                       fontWeight: 600,
+                      flexShrink: 0,
                     }}
                   >
                     K
                   </div>
                   <div style={{ fontSize: "0.85rem", color: "var(--fg-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span>Searching documents & generating answer</span>
+                    <span>Searching documents &amp; generating answer</span>
                     <div className="loading-dots">
                       <span></span>
                       <span></span>
@@ -866,23 +970,20 @@ export default function Home() {
           )}
         </div>
 
-        {/* Vercel-Style Floating Input Dock */}
+        {/* Floating Input Dock — sticky at bottom, shrinks with keyboard on mobile */}
         <div
+          className="input-dock"
           style={{
-            position: "absolute",
-            bottom: "0",
-            left: "0",
-            right: "0",
-            padding: "16px 20px 24px 20px",
+            flexShrink: 0,
+            padding: "12px 20px calc(16px + env(safe-area-inset-bottom, 0px)) 20px",
             background: "linear-gradient(to top, var(--bg-background) 75%, transparent)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            pointerEvents: "none",
           }}
         >
           <div
-            className="vercel-card"
+            className="vercel-card input-dock-inner"
             style={{
               width: "100%",
               maxWidth: "720px",
@@ -893,7 +994,6 @@ export default function Home() {
               alignItems: "flex-end",
               gap: "10px",
               boxShadow: "0 4px 20px rgba(0,0,0,0.12), var(--shadow)",
-              pointerEvents: "auto",
             }}
           >
             <textarea
@@ -901,11 +1001,12 @@ export default function Home() {
               value={input}
               onChange={handleTextareaInput}
               onKeyDown={handleKeyDown}
-              placeholder="Ask Kiwi about your notes (e.g. Find CD experiment 630)..."
+              placeholder="Ask Kiwi about your notes..."
               rows={1}
               style={{
                 flex: 1,
-                fontSize: "0.92rem",
+                // 16px prevents iOS auto-zoom on focus
+                fontSize: "16px",
                 color: "var(--fg-primary)",
                 resize: "none",
                 maxHeight: "160px",
@@ -919,10 +1020,10 @@ export default function Home() {
               disabled={!input.trim() || loading}
               className={input.trim() && !loading ? "vercel-button-primary" : "vercel-button"}
               style={{
-                width: "32px",
-                height: "32px",
+                width: "36px",
+                height: "36px",
                 padding: 0,
-                borderRadius: "6px",
+                borderRadius: "8px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
